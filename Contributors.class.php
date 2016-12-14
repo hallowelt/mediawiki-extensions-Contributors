@@ -7,6 +7,7 @@
  * @ingroup Extensions
  * @author Rob Church <robchur@gmail.com>
  * @author Ike Hecht
+ * @author Leonid Verhovskij
  */
 class Contributors {
 	/** @var Title */
@@ -135,7 +136,7 @@ class Contributors {
 				'COUNT(*) AS count',
 				'rev_user',
 				'rev_user_text',
-				), $this->getConditions(), __METHOD__,
+				), $this->getConditions( $dbr ), __METHOD__,
 				array(
 				'GROUP BY' => 'rev_user_text',
 				'ORDER BY' => 'count DESC',
@@ -199,9 +200,29 @@ class Contributors {
 	/**
 	 * Get conditions for the main query
 	 *
+	 * @param IDatabase $dbr
 	 * @return array
 	 */
-	protected function getConditions() {
+	protected function getConditions( IDatabase $dbr ) {
+		global $wgContributorsGroupExceptions;
+
+		//Check if exception groups are set to hide these users
+		if( is_array($wgContributorsGroupExceptions) && count( $wgContributorsGroupExceptions ) > 0 ){
+
+			$groups = $dbr->makeList( $wgContributorsGroupExceptions );
+
+			$groupQuery = $dbr->selectSQLText	(
+				"user_groups",
+				"ug_user",
+				"ug_user = rev_user AND ug_group in (" . $groups . ")",
+				__METHOD__,
+				[],
+				[]
+			);
+
+			$conds[] = "rev_user NOT IN (" . $groupQuery . ")";
+		}
+
 		$conds['rev_page'] = $this->getTarget()->getArticleID();
 		$conds[] = 'rev_deleted & ' . Revision::DELETED_USER . ' = 0';
 		return $conds;
