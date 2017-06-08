@@ -32,16 +32,16 @@ class SpecialContributors extends IncludableSpecialPage {
 		$this->setHeaders();
 
 		$opts = $this->getOptions();
-		$target = $opts['target'];
-		unset( $opts['target'] );
+		$target = $opts->getValue( 'target' );
+		$opts->reset( 'target' );
 		$this->setContributorsClass(
-			new Contributors( Title::newFromText( $target ), $opts->getAllValues() ) );
+		  new Contributors( Title::newFromText( $target ), $opts->getAllValues() ) );
 
 		# What are we doing? Different execution paths for inclusion,
 		# direct access and raw access
 		if ( $this->including() ) {
 			$this->showInclude();
-		} elseif ( $opts['action'] == 'raw' ) {
+		} elseif ( $opts->getValue( 'action' ) == 'raw' ) {
 			$this->showRaw();
 		} else {
 			$output->addHTML( $this->makeForm() );
@@ -72,8 +72,8 @@ class SpecialContributors extends IncludableSpecialPage {
 		$opts = $this->getDefaultOptions();
 		$opts->fetchValuesFromRequest( $this->getRequest() );
 		// Give precedence to target parameter over subpage string
-		if ( !$opts['target'] && $this->subpageString !== null ) {
-			$opts['target'] = $this->subpageString;
+		if ( !$opts->getValue('target') && $this->subpageString !== null ) {
+			$opts->add( 'target', $this->subpageString );
 		}
 
 		return $opts;
